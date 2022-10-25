@@ -1,6 +1,6 @@
 import asyncdispatch, json, options, jsony, httpclient
 import ../objects, ../constants
-import tables, sequtils, strutils, os, mimetypes
+import tables, sequtils, strutils, os, mimetypes, unicode
 import requester
 
 proc getInvite*(api: RestApi, code: string;
@@ -147,13 +147,13 @@ proc registerApplicationCommand*(api: RestApi; application_id: string;
     ## Create a global or guild only slash command.
     ##
     ## - `guild_id` - Optional
-    ## - `name` - Character length (3 - 32)
+    ## - `name` - Character length (1 - 32)
     ## - `descripton` - Character length (1 - 100)
     ##
     ## **NOTE:** Creating a command with the same name
     ## as an existing command for your application will
     ## overwrite the old command.
-    assert name.len >= 3 and name.len <= 32
+    assert name.runeLen >= 1 and name.runeLen <= 32
     var payload = %*{"name": name,
                      "dm_permission": dm_permission,
                      "type": ord kind}
@@ -165,7 +165,7 @@ proc registerApplicationCommand*(api: RestApi; application_id: string;
 
     payload.loadOpt(name_localizations, description_localizations)
     if kind notin {atUser, atMessage}:
-        assert description.len >= 1 and description.len <= 100
+        assert description.runeLen >= 1 and description.runeLen <= 100
         payload["description"] = %description
     else:
         assert description == "", "Context menu commands cannot have description"
@@ -236,7 +236,7 @@ proc editApplicationCommand*(api: RestApi; application_id, command_id: string;
     ## Modify slash command for a specific application.
     ##
     ## - `guild_id` - Optional
-    ## - `name` - Optional Character length (3 - 32)
+    ## - `name` - Optional Character length (1 - 32)
     ## - `descripton` - Optional Character length (1 - 100)
     var payload = %*{}
     var endpoint = endpointGlobalCommands(application_id, command_id)
@@ -244,10 +244,10 @@ proc editApplicationCommand*(api: RestApi; application_id, command_id: string;
     if guild_id != "":
         endpoint = endpointGuildCommands(application_id, guild_id, command_id)
     if name != "":
-        assert name.len in 3..32
+        assert name.runeLen in 1..32
         payload["name"] = %name
     if description != "":
-        assert description.len in 1..100
+        assert description.runeLen in 1..100
         payload["description"] = %description
     if options.len > 0: payload["options"] = %(options.map(`%%*`))
 
@@ -386,7 +386,7 @@ proc interactionResponseMessage*(api: RestApi,
             $pl,
             mp = mpd
         )
-        return 
+        return
     discard await api.request(
         "POST",
         endpointInteractionsCallback(interaction_id, interaction_token),
